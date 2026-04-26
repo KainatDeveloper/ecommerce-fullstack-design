@@ -39,22 +39,22 @@ export default function ContentMain({ product }) {
     }
   }, [product]);
   return (
-    <div className="hidden sm:flex w-full max-w-[1180px] h-auto container p-5 border border-gray-300 rounded bg-base-100  flex-col items-center justify-center md:grid md:grid-cols-2  lg:flex lg:flex-row lg:justify-normal gap-5">
+    <div className="hidden sm:flex w-full max-w-295 h-auto container p-5 border border-gray-300 rounded bg-base-100  flex-col items-center justify-center md:grid md:grid-cols-2  lg:flex lg:flex-row lg:justify-normal gap-5">
       {/* 1st */}
       <div className="w-full h-auto lg:flex lg:flex-col md:col-span-2 overflow-auto gap-3">
-        <div className="w-full h-[380px] p-4 border border-gray-300 rounded flex justify-center items-center overflow-hidden">
+        <div className="w-full h-95 p-4 border border-gray-300 rounded flex justify-center items-center overflow-hidden">
           <img
             src={img}
             alt="Selected product"
-            className="w-full h-auto max-w-[400px] max-h-[400px] min-h-[98px] min-w-[98px] object-cover"
+            className="w-full h-auto max-w-100 max-h-100 min-h-24.5 min-w-24.5 object-cover"
           />
         </div>
-        <div className="w-full max-w-[895px] h-auto flex items-center sm:justify-center overflow-auto gap-1">
+        <div className="w-full max-w-223.75 h-auto flex items-center sm:justify-center overflow-auto gap-1">
           {(product.image ? [product.image] : []).map((itm, i) => (
             <div key={i}>
               <div
                 onClick={() => handleThumbnailClick(itm)}
-                className={`w-[56px] h-[56px] border rounded overflow-hidden ${
+                className={`w-14 h-14 border rounded overflow-hidden ${
                   img === itm ? "border-gray-500" : "border-gray-300"
                 }`}
               >
@@ -69,7 +69,7 @@ export default function ContentMain({ product }) {
         </div>
       </div>
       {/* 2nd cols */}
-      <div className="w-full max-w-[430px]">
+      <div className="w-full max-w-100.5">
         <div>
           <svg
             width="84"
