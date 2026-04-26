@@ -1,122 +1,120 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect, Component } from "react";
+import { useAuthStore } from "./stores/auth.store";
+import { useProductStore } from "./stores/product.store";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Layout Components
+import Header from "./components/navbar/header";
+import HeaderForMobile from "./components/navbar/HeaderForMobile";
+import Navbar from "./components/navbar/Navbar";
+import Footer from "./components/Footer/Footer";
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+// Pages
+import HomePage from "./pages/HomePage";
+import ProductListPage from "./pages/ProductListPage";
+import DetailPage from "./pages/DetailPage";
+import AdminPage from "./pages/AdminPage";
+
+// Misc
+import { Toaster } from "react-hot-toast";
+import CartPage from "./pages/CartPage";
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("App Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ 
+          padding: 40, 
+          background: "#fee", 
+          color: "#c00",
+          fontFamily: "monospace",
+          minHeight: "100vh"
+        }}>
+          <h1>Something went wrong:</h1>
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {this.state.error?.toString()}
+            {"\n\n"}
+            {this.state.error?.stack}
+          </pre>
+          <p>Check the browser console (F12) for more details.</p>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      );
+    }
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    return this.props.children;
+  }
 }
 
-export default App
+function App() {
+  const location = useLocation();
+  const { authUser, checkAuth, loader } = useAuthStore();
+  const { loading, getAllProducts } = useProductStore();
+
+  useEffect(() => {
+    // Check auth first
+    checkAuth();
+    
+    // Load products in background (don't block UI)
+    getAllProducts().catch((error) => {
+      console.error("Background product load failed:", error);
+    });
+  }, []);
+
+  // Only show loading while checking auth, not while loading products
+  if (loader) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center bg-[#f8f9fc]">
+        <div className="text-center">
+          <div className="loading loading-spinner loading-lg text-primary"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        {location.pathname !== "/cart" && <Navbar />}
+
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/cart"
+              element={authUser ? <CartPage /> : <Navigate to={"/"} />}
+            />
+            <Route
+              path="/admin"
+              element={
+                authUser?.role === "admin" ? <AdminPage /> : <Navigate to="/" />
+              }
+            />
+            <Route path="/product/:id?" element={<DetailPage />} />
+            <Route path="/category/:category?" element={<ProductListPage />} />
+            <Route path="/search/:keyword?" element={<ProductListPage />} />
+          </Routes>
+        </main>
+
+        <Footer />
+        <Toaster position="top-center" />
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
