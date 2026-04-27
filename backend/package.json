@@ -1,18 +1,27 @@
 {
-  "name": "backend",
+  "name": "ecommerce-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-  "dev": "nodemon server.js",
-  "client": "npm run dev --prefix ../frontend",
-  "server": "nodemon server.js",
-  "start-all": "concurrently \"npm run server\" \"npm run client\""
-},
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "Professional E-commerce Backend API",
+  "main": "server.js",
   "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "client": "npm run dev --prefix ../frontend",
+    "start-all": "concurrently \"npm run server\" \"npm run client\"",
+    "seed": "node seed.js",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "ecommerce",
+    "api",
+    "express",
+    "mongodb",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "concurrently": "^9.2.1",
@@ -20,9 +29,16 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.5.0"
+    "mongoose": "^9.5.0",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
+    "eslint": "^8.56.0",
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   }
 }
+

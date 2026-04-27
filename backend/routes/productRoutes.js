@@ -1,105 +1,231 @@
 import express from "express";
 import Product from "../models/Product.js";
 import { protect, adminOnly } from "../middleware/auth.js";
+import { asyncHandler, sendSuccessResponse, sendErrorResponse } from "../utils/errorHandler.js";
+import { validateProductData, validateObjectId } from "../utils/validators.js";
+import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from "../utils/constants.js";
 
 const router = express.Router();
 
-// GET ALL PRODUCTS
-router.get("/", async (req, res) => {
-  try {
-    const { search, category } = req.query;
-    let query = {};
+/**
+ * @route   GET /api/product
+ * @desc    Get all products with search and filtering
+ * @access  Public
+ */
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const { search, category, page = 1, limit = 10, sort = "-createdAt" } = req.query;
 
-    if (search) {
-      query.name = { $regex: search, $options: "i" };
+    let query = { isActive: true };
+
+    // Search functionality
+    if (search && search.trim()) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
     }
 
-    if (category) {
-      query.category = category;
+    // Filter by category
+    if (category && category !== "all") {
+      query.category = category.toLowerCase();
     }
 
-    const products = await Product.find(query);
-    res.json({ products });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    // Pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.max(1, Math.min(50, parseInt(limit)));
+    const skip = (pageNum - 1) * pageSize;
 
-// GET FEATURED PRODUCTS
-router.get("/featured", async (req, res) => {
-  try {
-    const featured = await Product.find().limit(8);
-    res.json(featured);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    // Get total count for pagination
+    const total = await Product.countDocuments(query);
+    const totalPages = Math.ceil(total / pageSize);
 
-// GET PRODUCT BY ID
-router.get("/:id", async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    // Fetch products
+    const products = await Product.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(pageSize)
+      .lean();
 
-// ADD PRODUCT (Admin only)
-router.post("/", protect, async (req, res) => {
-  try {
-    const newProduct = new Product(req.body);
-    await newProduct.save();
-    res.json({ message: "Product created", product: newProduct });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// UPDATE PRODUCT
-router.put("/:id", protect, async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    return sendSuccessResponse(res, HTTP_STATUS.OK, SUCCESS_MESSAGES.PRODUCTS_RETRIEVED, {
+      products,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: pageSize,
+        totalPages,
+      },
     });
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.json({ message: "Product updated", product });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+  })
+);
 
-// DELETE PRODUCT
-router.delete("/:id", protect, async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.json({ message: "Product deleted" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+/**
+ * @route   GET /api/product/featured
+ * @desc    Get featured products
+ * @access  Public
+ */
+router.get(
+  "/featured",
+  asyncHandler(async (req, res) => {
+    const featured = await Product.find({
+      isFeatured: true,
+      isActive: true,
+    })
+      .limit(8)
+      .sort("-createdAt")
+      .lean();
 
-// TOGGLE FEATURED
-router.patch("/:id", protect, async (req, res) => {
-  try {
+    return sendSuccessResponse(res, HTTP_STATUS.OK, "Featured products retrieved", {
+      products: featured,
+    });
+  })
+);
+
+/**
+ * @route   GET /api/product/:id
+ * @desc    Get product by ID
+ * @access  Public
+ */
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    // Validate MongoDB ObjectId
+    if (!validateObjectId(req.params.id)) {
+      return sendErrorResponse(res, HTTP_STATUS.BAD_REQUEST, "Invalid product ID format");
+    }
+
     const product = await Product.findById(req.params.id);
+
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return sendErrorResponse(res, HTTP_STATUS.NOT_FOUND, ERROR_MESSAGES.PRODUCT_NOT_FOUND);
     }
+
+    return sendSuccessResponse(res, HTTP_STATUS.OK, "Product retrieved", { product });
+  })
+);
+
+/**
+ * @route   POST /api/product
+ * @desc    Create a new product (Admin only)
+ * @access  Private (Admin)
+ */
+router.post(
+  "/",
+  protect,
+  adminOnly,
+  asyncHandler(async (req, res) => {
+    // Validate input
+    const validationErrors = validateProductData(req.body);
+    if (validationErrors.length > 0) {
+      return sendErrorResponse(res, HTTP_STATUS.BAD_REQUEST, ERROR_MESSAGES.INVALID_PRODUCT_DATA, validationErrors);
+    }
+
+    // Create product
+    const product = await Product.create({
+      ...req.body,
+      category: req.body.category.toLowerCase(),
+    });
+
+    return sendSuccessResponse(res, HTTP_STATUS.CREATED, SUCCESS_MESSAGES.PRODUCT_CREATED, {
+      product,
+    });
+  })
+);
+
+/**
+ * @route   PUT /api/product/:id
+ * @desc    Update product (Admin only)
+ * @access  Private (Admin)
+ */
+router.put(
+  "/:id",
+  protect,
+  adminOnly,
+  asyncHandler(async (req, res) => {
+    // Validate ID
+    if (!validateObjectId(req.params.id)) {
+      return sendErrorResponse(res, HTTP_STATUS.BAD_REQUEST, "Invalid product ID format");
+    }
+
+    // Validate input data
+    const validationErrors = validateProductData(req.body);
+    if (validationErrors.length > 0) {
+      return sendErrorResponse(res, HTTP_STATUS.BAD_REQUEST, ERROR_MESSAGES.INVALID_PRODUCT_DATA, validationErrors);
+    }
+
+    // Update product
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, category: req.body.category?.toLowerCase() },
+      { new: true, runValidators: true }
+    );
+
+    if (!product) {
+      return sendErrorResponse(res, HTTP_STATUS.NOT_FOUND, ERROR_MESSAGES.PRODUCT_NOT_FOUND);
+    }
+
+    return sendSuccessResponse(res, HTTP_STATUS.OK, SUCCESS_MESSAGES.PRODUCT_UPDATED, {
+      product,
+    });
+  })
+);
+
+/**
+ * @route   DELETE /api/product/:id
+ * @desc    Delete product (Admin only)
+ * @access  Private (Admin)
+ */
+router.delete(
+  "/:id",
+  protect,
+  adminOnly,
+  asyncHandler(async (req, res) => {
+    // Validate ID
+    if (!validateObjectId(req.params.id)) {
+      return sendErrorResponse(res, HTTP_STATUS.BAD_REQUEST, "Invalid product ID format");
+    }
+
+    const product = await Product.findByIdAndDelete(req.params.id);
+
+    if (!product) {
+      return sendErrorResponse(res, HTTP_STATUS.NOT_FOUND, ERROR_MESSAGES.PRODUCT_NOT_FOUND);
+    }
+
+    return sendSuccessResponse(res, HTTP_STATUS.OK, SUCCESS_MESSAGES.PRODUCT_DELETED);
+  })
+);
+
+/**
+ * @route   PATCH /api/product/:id/featured
+ * @desc    Toggle product featured status (Admin only)
+ * @access  Private (Admin)
+ */
+router.patch(
+  "/:id/featured",
+  protect,
+  adminOnly,
+  asyncHandler(async (req, res) => {
+    // Validate ID
+    if (!validateObjectId(req.params.id)) {
+      return sendErrorResponse(res, HTTP_STATUS.BAD_REQUEST, "Invalid product ID format");
+    }
+
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return sendErrorResponse(res, HTTP_STATUS.NOT_FOUND, ERROR_MESSAGES.PRODUCT_NOT_FOUND);
+    }
+
     product.isFeatured = !product.isFeatured;
     await product.save();
-    res.json({ message: "Product updated", product });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+
+    return sendSuccessResponse(res, HTTP_STATUS.OK, SUCCESS_MESSAGES.PRODUCT_UPDATED, {
+      product,
+    });
+  })
+);
+
+export default router;
 
 export default router;

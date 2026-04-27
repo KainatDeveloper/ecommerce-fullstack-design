@@ -1,50 +1,40 @@
-import React, { useEffect } from "react";
-import { useProductStore } from "../../stores/product.store";
-import { Link } from "react-router-dom";
+import React from "react";
+import ProductCard from "./ProductCard";
 
 export default function BlockItemsGroup2({ techProducts }) {
-  const getShortTitle = (name) => name?.split(" ")[0];
-
-
   return (
-    <div className="w-full max-w-[1180px] h-auto md:max-h-[257px] p-0 gap-0 border border-gray-300 rounded mt-4 bg-base-100 flex flex-col md:flex-row">
-      <div className="relative max-w-[280px] md:min-h-[254px] overflow-hidden flex">
+    <div className="w-full max-w-[1180px] h-auto p-0 gap-0 border border-gray-300 rounded mt-4 bg-base-100 flex flex-col md:flex-row">
+      {/* Category Banner Section */}
+      <div className="relative max-w-[280px] md:min-h-[380px] overflow-hidden flex bg-gradient-to-br from-blue-100 to-blue-50">
         <img
-          className="hidden md:block w-full h-auto object-[right_bottom]"
+          className="hidden md:block w-full h-full object-cover opacity-30"
           src="/Image/Esection.png"
-          alt=""
+          alt="Consumer electronics and gadgets"
         />
-        <div
-          style={{ background: "rgba(255, 255, 255, 0.3)" }}
-          className="hidden md:block w-full h-full absolute z-10 p-5 space-y-2.5"
-        ></div>
-        <div className="w-full md:absolute z-10 md:p-5 space-y-5 mt-3 md:mt-0">
-          <h1 className="w-full md:w-[154px] md:text-[20px] font-medium text-black leading-tight">
-            Consumer electronics and gadgets
+        <div className="w-full md:absolute z-10 md:p-5 space-y-4 mt-4 md:mt-0 px-4 md:px-0">
+          <h1 className="text-[20px] md:text-[24px] font-bold text-black leading-tight">
+            Consumer
           </h1>
-          <button className="hidden md:block btn bg-white">Source now</button>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-black leading-tight">
+            electronics and gadgets
+          </h1>
+          <button className="hidden md:block btn btn-sm bg-white text-black hover:bg-gray-100">
+            Source now
+          </button>
         </div>
       </div>
 
-      <div className="w-full max-w-[895px] flex md:grid md:grid-cols-[repeat(4,223px)] md:grid-rows-2 overflow-x-auto">
-        {techProducts.map((itm, i) => (
-          <Link
-            to={`/product/${itm._id}`}
-            key={itm._id}
-            className="h-[127px] p-4 leading-10 relative cursor-pointer border-l border-t border-gray-300"
-          >
-            <h1 className="text-black text-sm">
-              {<p>{getShortTitle(itm?.name)}</p>}
-            </h1>
-            <div className="leading-tight">
-              <p className="w-[97px] text-[13px]">From</p>
-              <p className="w-[97px] text-[13px]">${itm.price}</p>
-            </div>
-            <div className="w-[82px] h-[82px]  absolute bottom-0 right-0">
-              <img src={itm.image} alt={itm.name} />
-            </div>
-          </Link>
-        ))}
+      {/* Products Grid Section */}
+      <div className="w-full flex-1 p-4 md:p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        {techProducts && techProducts.length > 0 ? (
+          techProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))
+        ) : (
+          <div className="col-span-full flex items-center justify-center py-12 text-gray-500">
+            <p>No products available</p>
+          </div>
+        )}
       </div>
     </div>
   );
