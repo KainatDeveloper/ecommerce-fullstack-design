@@ -13,13 +13,11 @@ import HeaderForMobile from "../components/navbar/HeaderForMobile.jsx";
 import { useEffect } from "react";
 
 export default function HomePage() {
-  const { getFeaturedByCategory, getfeaturedProducts, getAllProducts } =
-    useProductStore();
-  const interiorProducts = getFeaturedByCategory("interior");
-  const techProducts = getFeaturedByCategory("tech");
+  const { getProductsByCategory, getAllProducts } = useProductStore();
+  const interiorProducts = getProductsByCategory("interior");
+  const techProducts = getProductsByCategory("tech");
 
   useEffect(() => {
-    getfeaturedProducts();
     getAllProducts();
   }, []);
 

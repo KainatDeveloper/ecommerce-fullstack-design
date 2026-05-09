@@ -9,7 +9,7 @@ const AuthPage = () => {
     email: "",
     password: "",
   });
-  const { Login, Register, loading } = useAuthStore();
+  const { Login, SignUp, loading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -22,7 +22,7 @@ const AuthPage = () => {
       await Login({ email: formData.email, password: formData.password });
       navigate("/");
     } else {
-      const success = await Register(formData);
+      const success = await SignUp(formData);
       if (success) setIsLogin(true);
     }
   };

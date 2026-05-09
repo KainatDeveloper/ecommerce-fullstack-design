@@ -77,7 +77,7 @@ export const useCartStore = create((set, get) => ({
     toast.success("Item removed from cart");
   },
 
-  updateCArtItem: async (productId, newQty) => {
+  updateCartItem: async (productId, newQty) => {
     set({ isLoading: true });
     try {
       await axiosInstance.put("/cart", { productId, quantity: newQty });

@@ -39,8 +39,17 @@ export const protect = async (req, res, next) => {
       throw error;
     }
 
-    // Get user from token
-    const user = await User.findById(decoded.id);
+    // Get user from token (support multiple possible JWT payload shapes)
+    const userId = decoded.id || decoded._id || decoded.userId;
+    if (!userId) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid token payload: missing user id",
+      });
+    }
+
+    const user = await User.findById(userId);
+
 
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -111,10 +120,14 @@ export const optionalAuth = async (req, res, next) => {
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || "secretkey");
-        const user = await User.findById(decoded.id);
-        if (user) {
-          req.user = user;
+        const userId = decoded.id || decoded._id || decoded.userId;
+        if (userId) {
+          const user = await User.findById(userId);
+          if (user) {
+            req.user = user;
+          }
         }
+
       } catch (error) {
         // Continue without user if token is invalid
       }

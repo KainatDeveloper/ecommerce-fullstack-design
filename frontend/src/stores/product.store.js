@@ -35,8 +35,8 @@ export const useProductStore = create((set, get) => ({
       const res = await axiosInstance.get("/product/", { timeout: 5000 });
       console.log("Products response:", res.data);
       
-      if (res.data.products) {
-        set({ products: res.data.products, loading: false });
+      if (res.data.data && res.data.data.products) {
+        set({ products: res.data.data.products, loading: false });
       } else {
         console.warn("No products in response, using empty array");
         set({ products: [], loading: false });
@@ -77,8 +77,10 @@ export const useProductStore = create((set, get) => ({
   },
   getfeaturedProducts: async () => {
     try {
-      const res = await axiosInstance.get("/product/featuredProducts");
-      set({ featuredProducts: res.data });
+      const res = await axiosInstance.get("/product/featured");
+      if (res.data.data && res.data.data.products) {
+        set({ featuredProducts: res.data.data.products });
+      }
     } catch (error) {
       toast.error(error.message);
     }

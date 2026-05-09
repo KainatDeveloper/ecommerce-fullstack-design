@@ -1,5 +1,5 @@
 import React from "react";
-import {CountryDropdown} from "./Dropdown.flag ";
+import {CountryDropdown} from "./Dropdown.flag";
 import LanguageDropdown from "./Dropdown.languages";
 import { Menu } from "lucide-react";
 import { Link} from "react-router-dom";

@@ -4,9 +4,8 @@ import { useAuthStore } from "./stores/auth.store";
 import { useProductStore } from "./stores/product.store";
 
 // Layout Components
-import Header from "./components/navbar/header";
-import HeaderForMobile from "./components/navbar/HeaderForMobile";
-import Navbar from "./components/navbar/Navbar";
+import Header from "./components/Navbar/header";
+import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 
 // Pages
